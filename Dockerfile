@@ -8,7 +8,7 @@ LABEL maintainer Ascensio System SIA <support@onlyoffice.com>
 ARG BASE_VERSION
 ARG PG_VERSION=14
 ARG OOU_VERSION_MAJOR=8.1.3
-ARG OOU_BUILD=1
+ARG OOU_BUILD=3
 
 ENV OC_RELEASE_NUM=21
 ENV OC_RU_VER=12
@@ -64,7 +64,6 @@ RUN echo "#!/bin/sh\nexit 0" > /usr/sbin/policy-rc.d && \
         pwgen \
         rabbitmq-server \
         redis-server \
-        software-properties-common \
         sudo \
         supervisor \
         ttf-mscorefonts-installer \
@@ -101,7 +100,7 @@ COPY oracle/sqlplus /usr/bin/sqlplus
 
 EXPOSE 80 443
 
-ARG COMPANY_NAME=onlyoffice
+ARG COMPANY_NAME=esdnc
 ARG PRODUCT_NAME=documentserver
 ARG PRODUCT_EDITION=
 ARG PACKAGE_VERSION=
@@ -111,13 +110,13 @@ ARG PACKAGE_BASEURL="http://download.onlyoffice.com/install/documentserver/linux
 ENV COMPANY_NAME=$COMPANY_NAME \
     PRODUCT_NAME=$PRODUCT_NAME \
     PRODUCT_EDITION=$PRODUCT_EDITION \
-    DS_PLUGIN_INSTALLATION=false \
+    DS_PLUGIN_INSTALLATION=true \
     DS_DOCKER_INSTALLATION=true
 
 ## PACKAGE_FILE="${COMPANY_NAME}-${PRODUCT_NAME}${PRODUCT_EDITION}${PACKAGE_VERSION:+_$PACKAGE_VERSION}_${TARGETARCH:-$(dpkg --print-architecture)}.deb" && \
 ##    wget -q -P /tmp "$PACKAGE_BASEURL/$PACKAGE_FILE" && \
 ##    rm -f /tmp/onlyoffice-documentserver*.deb && \
-RUN    wget -q -P /tmp "https://github.com/thomisus/server/releases/download/${OOU_VERSION_MAJOR}.${OOU_BUILD}/onlyoffice-documentserver_${OOU_VERSION_MAJOR}-${OOU_BUILD}.oou_amd64.deb" && \
+RUN    wget -q -P /tmp "https://github.com/thomisus/server/releases/download/onlyoffice-documentserver_8.1.3-3-esdnc_amd64.deb" && \
     apt-get -y update && \
     service postgresql start && \
     apt-get -yq install /tmp/onlyoffice-documentserver_${OOU_VERSION_MAJOR}-${OOU_BUILD}.oou_amd64.deb && \
