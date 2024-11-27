@@ -1,0 +1,106 @@
+name: ghcr-build
+on: 
+  push:
+    tags:
+      - builds-docker-image/*
+
+env:
+  DEBIAN_PACKAGE_SUFFIX: -esdnc
+  TAG_SUFFIX: -esdnc
+  DISTRO_FULLNAME: Debian 11
+  DISTRO_TAG_PREFIX: debian-11
+
+jobs:
+  onlyoffice-docker-image-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Free Space - Init
+        run: |
+          echo "$GITHUB_WORKSPACE"
+          df -h
+      - name: Free Space - Remove swap
+        run: |
+          sudo swapoff -a
+          sudo rm -f /swapfile
+          df -h
+      - name: Free Space - Remove boost & tools
+        run: |
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+      - name: Free Space - Remove dotnet
+        run: |
+          sudo rm -rf /usr/share/dotnet/shared/
+          sudo rm -rf /usr/share/dotnet/host/
+          sudo rm -rf /usr/share/dotnet/sdk/
+          df -h
+      - name: Free Space - Remove android
+        run: |
+          sudo rm -rf "$ANDROID_SDK_ROOT"
+          sudo rm -rf /usr/local/lib/android
+          df -h
+      - name: Free Space - Remove swift
+        run: |
+          sudo rm -rf "$SWIFT_PATH"
+          sudo rm -rf /usr/share/swift
+          df -h
+      - name: Free Space - apt-get clean
+        run: |
+          sudo apt-get clean
+          df -h
+      - name: Free Space - Show docker images
+        run: |
+          docker image ls -a
+          df -h
+      - name: Free Space - Remove docker images
+        run: |
+          docker rmi $(docker image ls -aq)
+          df -h
+            - name: Check out the repo
+        uses: actions/checkout@v4
+      - name: Split branch name
+        env:
+          BRANCH: ${{ github.ref_name }}
+        id: split-tag
+        run: echo "version=${BRANCH##*/}" >> $GITHUB_OUTPUT
+      - name: Get Product version
+        env:
+          VERSION: ${{ steps.split-tag.outputs.version }}
+        id: get-product-version
+        run: echo "product-version=${VERSION%.*}" >> $GITHUB_OUTPUT
+      - name: Get Build number
+        env:
+          VERSION: ${{ steps.split-tag.outputs.version }}
+          PRODUCT_VERSION: ${{ steps.get-product-version.outputs.product-version }}
+        id: get-build-number
+        run: echo "build-number=${VERSION##$PRODUCT_VERSION.}" >> $GITHUB_OUTPUT
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build Docker image
+        run: |
+          docker build . --tag ghcr.io/eshaan-sharma/onlyoffice-esdnc:latest --tag ghcr.io/eshaan-sharma/onlyoffice-esdnc:${{ steps.get-product-version.outputs.product-version }}.${{ steps.get-build-number.outputs.build-number }} 
+          docker push ghcr.io/eshaan-sharma/onlyoffice-esdnc:latest -all-tags
+      - name: Release
+        uses: crowbarmaster/GH-Automatic-Releases@v1.6.0
+        with:
+          repo_token: ${{ github.token }}
+          prerelease: false
+          generate_notes: false
+          automatic_release_tag: onlyoffice-docker-build-${{ env.DISTRO_TAG_PREFIX }}/${{ steps.split-tag.outputs.version }}
+          title: Docker build of OnlyOffice ${{ steps.split-tag.outputs.version }} based on Build ( ${{ env.DISTRO_FULLNAME }} )
+          body: |
+           Install from command line using syntax:
+            ```
+             docker pull ghcr.io/eshaan-sharma/onlyoffice-esdnc:latest
+            ```
+          files: |
+            ${{ steps.deb-release.outputs.filename }}
+
+        
+    
