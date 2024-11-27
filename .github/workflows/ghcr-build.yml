@@ -85,7 +85,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build . --tag ghcr.io/eshaan-sharma/onlyoffice-esdnc:latest --tag ghcr.io/eshaan-sharma/onlyoffice-esdnc:${{ steps.get-product-version.outputs.product-version }}.${{ steps.get-build-number.outputs.build-number }} 
-          docker push ghcr.io/eshaan-sharma/onlyoffice-esdnc:latest -all-tags
+          docker push ghcr.io/eshaan-sharma/onlyoffice-esdnc:latest --all-tags
       - name: Release
         uses: crowbarmaster/GH-Automatic-Releases@v1.6.0
         with:
